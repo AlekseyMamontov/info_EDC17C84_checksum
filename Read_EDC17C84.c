@@ -48,17 +48,19 @@ void info_block_crc32(uint8_t* buf){
 
     printf("\n  0x%04X     0x%05lX   ",ID_block,(buf-buffer_file));
     if(CS1 == CS1_count){printf("     %02X%02X (\033[32m %02X%02X \033[0m)  ",*(buf+2),*(buf+3),*bCS1,*(bCS1+1));
-        }else{printf("     %04X  (\e[31m %04X \e[0m)  ",CS1,CS1_count);}
+        }else{printf("     %02X%02X  (\e[31m %02X%02X \e[0m)  ",*(buf+2),*(buf+3),*bCS1,*(bCS1+1));}
 
-    if(CS2 == CS2_count){printf("    %08X (\e[32m %08X \e[0m)  ",CS2,CS2_count);
-        }else{printf("    %08X (\e[31m %08X \e[0m)",CS2,CS2_count);}
+    if(CS2 == CS2_count){printf("    %02X%02X%02X%02X (\e[32m %02X%02X%02X%02X \e[0m)  ",
+                                *(buf+0x7c),*(buf+0x7d),*(buf+0x7e),*(buf+0x7f),*bCS2,*(bCS2+1),*(bCS2+2),*(bCS2+3));
+        }else{printf("    %02X%02X%02X%02X (\e[31m %02X%02X%02X%02X \e[0m)",
+                                *(buf+0x7c),*(buf+0x7d),*(buf+0x7e),*(buf+0x7f),*bCS2,*(bCS2+1),*(bCS2+2),*(bCS2+3));}
     //printf("\n");
 
 };
 
 uint8_t *search_id_block(uint8_t* buf,uint16_t id){
 
-    uint16_t* id_addr;
+    uint16_t* id_addr;  
     uint8_t* max_buf = (buf+file_size);
 
     while(buf < max_buf){
@@ -73,7 +75,7 @@ uint8_t *search_id_block(uint8_t* buf,uint16_t id){
 };
 
 void info_all_crc_block(uint8_t* buf){
-    printf("EDC17 TC1782 hecksums of all blocks in eeprom(dflash) \033[32m OK / \033[31m Error\033[0m \n");
+    printf("EDC17 TC1782 Checksums of all blocks in eeprom(dflash) \033[32m OK / \033[31m Error\033[0m \n");
     printf("\x1b[48;5;22m ID block    address     CS1 memory(Calc)    CS2 memory (Calculated) \x1b[0m \n");
 
     uint16_t* id_addr;
@@ -90,6 +92,27 @@ void info_all_crc_block(uint8_t* buf){
 };
 
 
+void info_block_0x0001(uint8_t* buf){
+
+printf("\n\x1b[48;5;22m Block Date  id 1  addres 0x%06lX         \x1b[0m \n\n",buf-buffer_file);
+printf(" Date 1 :%.8s \n",(buf+0x0F));
+printf(" Date 2 :%.8s \n",(buf+0x1A));
+printf(" Software :%.10s \n\n",(buf+0x2E));
+
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
  
 void search_and_print_blok(uint8_t* addr, long max_buffer, uint16_t id){
 
@@ -100,7 +123,7 @@ uint8_t * begin_addr = addr;
 uint8_t * max_addr = addr + max_buffer;
 uint8_t status = 0,col = 0;
 
-printf("------------- block № 0x%x ------------ \n \n", id);
+//printf("------------- block № 0x%x ------------ \n \n", id);
 
   while(addr < max_addr){
 
@@ -192,10 +215,7 @@ printf("------------- block № 0x%x ------------ \n \n", id);
 
             break;
 
-            case 0x01:
-            printf("Year: %s \n", (addr+0x0f));
-            printf("Software ECU: %s \n ",(addr+0x1A));
-            break;
+            case 0x01:info_block_0x0001(addr);break;
 
             case 0x14:
             case 0x15:
@@ -258,10 +278,18 @@ int main(int argc, char *argv[]) {
 
     // read file -> buffer
     fread(buffer, file_size, 1, file);
+
+    //info_block_crc32
+    info_all_crc_block(buffer);
+    printf("\n\n");
+
+    //Date 
     search_and_print_blok(buffer,file_size,0x01);
-   // vincode 
+   
+    // vincode 
     search_and_print_blok(buffer,file_size,0x3f);
     search_and_print_blok(buffer,file_size,0x40);
+
    // mileage
     search_and_print_blok(buffer,file_size,0x48);
     search_and_print_blok(buffer,file_size,0x43);
@@ -279,9 +307,7 @@ int main(int argc, char *argv[]) {
     search_and_print_blok(buffer,file_size,0x17);
 
 
-    //info_block_crc32(buffer + 0x10100);
-    info_all_crc_block(buffer);
-    printf("\n\n");
+
 
 
     // освобождаем память и закрываем файл
