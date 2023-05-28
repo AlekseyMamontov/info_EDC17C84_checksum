@@ -10,5 +10,5 @@ example
 
 
 
-<img src="Example.png" width=600 >
+<img src="example.png" width=600 >
 
