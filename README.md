@@ -1,6 +1,7 @@
 BOSCH EDC17C84 checksums blocks
 
 Linux 
+
 gcc -o readEDC17C84 Read_EDC17C84.c
 
 example
